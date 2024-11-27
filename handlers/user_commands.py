@@ -55,7 +55,7 @@ async def report_user(message: Message, bot: Bot):
         
 @router.message(Command('help'))
 async def cmd_help(message: Message):
-    text = """avatar - Посмотреть свой аватар.
+    text = """*avatar* - Посмотреть свой аватар.
     \n*ban* - Заблокировать участника.
     \n*help* - Помощь по командам.
     \n*info* - Информация о боте.
@@ -70,7 +70,7 @@ async def cmd_help(message: Message):
 
 @router.message(Command('info'))
 async def cmd_info(message: Message):
-    await message.answer("Я Бот помощник для ТГ канала Вольта. Он написал меня для помощи в чате. Вот мой исходный код: <a href='https://github.com/V0L1ER/VoltChatHelperBot.git'>Гитхаб</a>", parse_mode='HTML')
+    await message.answer("Я Бот помощник для ТГ канала Вольта. Он написал меня для помощи в чате. Вот мой исходный код: <a href='https://github.com/V0L1ER/VoltChatHelperBot.git'>Гитхаб</a>", parse_mode='HTML', disable_web_page_preview=True)
 
 @router.message(Command("avatar"))
 async def send_avatar(message: Message):
