@@ -56,21 +56,21 @@ async def report_user(message: Message, bot: Bot):
 @router.message(Command('help'))
 async def cmd_help(message: Message):
     text = """avatar - Посмотреть свой аватар.
-    \nban - Заблокировать участника.
-    \nhelp - Помощь по командам.
-    \ninfo - Информация о боте.
-    \nkick - Выгнать участника.
-    \nlistwarns - Список предупреждений.
-    \nremwarn - Удалить предупреждение.
-    \nreport - Пожаловаться на участника.
-    \nunban - Разблокировать участника.
-    \nwarn - Выдать предупреждение.
+    \n*ban* - Заблокировать участника.
+    \n*help* - Помощь по командам.
+    \n*info* - Информация о боте.
+    \n*kick* - Выгнать участника.
+    \n*listwarns* - Список предупреждений.
+    \n*remwarn* - Удалить предупреждение.
+    \n*report* - Пожаловаться на участника.
+    \n*unban* - Разблокировать участника.
+    \n*warn* - Выдать предупреждение.
         """
-    await message.answer(text)
+    await message.answer(text, parse_mode='Markdown')
 
 @router.message(Command('info'))
 async def cmd_info(message: Message):
-    await message.answer("Я Бот помощник для ТГ канала Вольта. Он написал меня для помощи в чате. Вот мой исходный код: <a href='https://t.me/c/{chat_id_link}/{msg_id}'>Перейти к сообщению</a>")
+    await message.answer("Я Бот помощник для ТГ канала Вольта. Он написал меня для помощи в чате. Вот мой исходный код: <a href='https://github.com/V0L1ER/VoltChatHelperBot.git'>Гитхаб</a>", parse_mode='HTML')
 
 @router.message(Command("avatar"))
 async def send_avatar(message: Message):
