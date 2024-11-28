@@ -3,6 +3,7 @@ import os
 from aiogram import Router, Bot, F
 from aiogram.types import Message
 from aiogram.filters import Command
+from aiogram.types import Message, ChatMemberAdministrator
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -52,25 +53,54 @@ async def report_user(message: Message, bot: Bot):
         print(f"Ошибка при пересылке сообщения: {e}")
         await message.answer("Произошла ошибка при пересылке сообщения.")
         
-        
+
+
 @router.message(Command('help'))
 async def cmd_help(message: Message):
-    text = """*avatar* - Посмотреть свой аватар.
-    \n*ban* - Заблокировать участника.
-    \n*help* - Помощь по командам.
-    \n*info* - Информация о боте.
-    \n*kick* - Выгнать участника.
-    \n*listwarns* - Список предупреждений.
-    \n*remwarn* - Удалить предупреждение.
-    \n*report* - Пожаловаться на участника.
-    \n*unban* - Разблокировать участника.
-    \n*warn* - Выдать предупреждение.
-        """
-    await message.answer(text, parse_mode='Markdown')
+    
+    chat_id = message.chat.id
+    member = await message.bot.get_chat_member(chat_id, message.from_user.id)
+    
+    if not isinstance(member, ChatMemberAdministrator) or not member.can_restrict_members:
+        text = ("Список доступных команд:\n"
+            "*/avatar* - Посмотреть свой аватар.\n"
+            "*/help* - Помощь по командам.\n"
+            "*/info* - Информация о боте.\n"
+            "*/report* - Пожаловаться на участника.\n"
+            "*/rules* - Показать правила чата\n"
+            "*/stats* - Статистика чата.\n"
+            "@admin - Вызвать админа"
+            )
+        await message.reply(text, parse_mode='Markdown')
+        return
+    
+    
+    text = ("Список доступных команд:\n"
+            "*/avatar* - Посмотреть свой аватар.\n"
+            "*/ban* - Заблокировать участника.\n"
+            "*/help* - Помощь по командам.\n"
+            "*/info* - Информация о боте.\n"
+            "*/kick* - Выгнать участника.\n"
+            "*/listwarns* - Список предупреждений.\n"
+            "*/mute* - Замутить участника.\n"
+            "*/poll* - Создать опрос.\n"
+            "*/remwarn* - Удалить предупреждение.\n"
+            "*/report* - Пожаловаться на участника.\n"
+            "*/rules* - Показать правила чата.\n"
+            "*/stats* - Статистика чата.\n"
+            "*/unban* - Разблокировать участника.\n"
+            "*/unmute* - размутить участника.\n"
+            "*/warn* - Выдать предупреждение.\n"
+            "@admin - Вызвать админа"
+            )
+    await message.reply(text, parse_mode='Markdown')
+    
+    
+message_counts = {}
 
 @router.message(Command('info'))
 async def cmd_info(message: Message):
-    await message.answer("Я Бот помощник для ТГ канала Вольта. Он написал меня для помощи в чате. Вот мой исходный код: <a href='https://github.com/V0L1ER/VoltChatHelperBot.git'>Гитхаб</a>", parse_mode='HTML', disable_web_page_preview=True)
+    await message.answer("Я <b>Бот</b> помощник для ТГ канала <b>Вольт</b>. Он <b>написал</b> меня для помощи в чате.\n<i>Вот мой исходный код:</i> <a href='https://github.com/V0L1ER/VoltChatHelperBot.git'><b>Гитхаб<b/></a>", parse_mode='HTML', disable_web_page_preview=True)
 
 @router.message(Command("avatar"))
 async def send_avatar(message: Message):
@@ -87,6 +117,19 @@ async def send_avatar(message: Message):
 
     # Отправляем фотографию в ответ
     await message.reply_photo(photo.file_id)
+    
+    
+@router.message(Command("rules"))
+async def rules_command(message: Message):
+    rules_text = (
+        "Правила чата:\n"
+        "1. Уважайте других участников.\n"
+        "2. Не спамьте и не флудите.\n"
+        "3. Запрещена реклама без согласования с администрацией.\n"
+        "4. Соблюдайте тематику чата.\n"
+        "5. Запрещены оскорбления и нецензурная лексика."
+    )
+    await message.reply(rules_text)
     
 @router.message(F.text.contains('@admin'))
 async def calling_all_admin(message: Message, bot: Bot):
@@ -119,9 +162,54 @@ async def calling_all_admin(message: Message, bot: Bot):
         )
         await message.answer(text, parse_mode='HTML')
         
-    
         
-    
+message_counts = {}
+
+
+@router.message(Command("stats"))
+async def chat_stats(message: Message):
+    chat_id = message.chat.id
+
+    if chat_id not in message_counts or not message_counts[chat_id]:
+        await message.reply("Статистика пока недоступна.")
+        return
+
+    # Сортируем пользователей по количеству сообщений
+    sorted_users = sorted(message_counts[chat_id].items(), key=lambda x: x[1], reverse=True)
+
+    # Ограничиваем до топ-10
+    top_users = sorted_users[:10]
+
+    stats_text = "📊 <b>Статистика чата — Топ 10 активных пользователей:</b>\n\n"
+    for user_id, msg_count in top_users:
+        try:
+            user = await message.chat.get_member(user_id)
+            if user.user.username:
+                user_name = f"@{user.user.username}"
+            else:
+                user_name = user.user.full_name
+        except Exception:
+            user_name = "Неизвестный пользователь"
+
+        stats_text += f"{user_name}: {msg_count} сообщений\n"
+
+    await message.reply(stats_text, parse_mode='HTML')
+        
+@router.message()
+async def count_messages(message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+
+    # Инициализируем словарь для чата, если его ещё нет
+    if chat_id not in message_counts:
+        message_counts[chat_id] = {}
+
+    # Инициализируем счётчик для пользователя
+    if user_id not in message_counts[chat_id]:
+        message_counts[chat_id][user_id] = 0
+
+    # Увеличиваем счётчик сообщений
+    message_counts[chat_id][user_id] += 1
     
     
     

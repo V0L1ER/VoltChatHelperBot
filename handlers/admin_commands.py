@@ -1,10 +1,11 @@
 import os
 
-from aiogram import Router
-from aiogram.types import Message, ChatMemberAdministrator
-from aiogram.filters import Command
+from aiogram import Router, Bot
+from aiogram.types import Message, ChatMemberAdministrator, ChatPermissions
+from aiogram.filters import Command, CommandObject
 from aiogram.exceptions import TelegramBadRequest
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -26,7 +27,17 @@ async def ban_user(message: Message):
         await message.reply("Эта команда должна быть использована как ответ на сообщение.")
         return
     
-    user_id = message.reply_to_message.from_user.id
+    if message.reply_to_message.from_user.id == message.from_user.id:
+        await message.reply("Нельзя банить самого себя 🤪")
+        return
+    
+    user_id = message.reply_to_message.from_user.id  
+    admins = os.getenv('ADMIN_IDS')
+    admins_list = [int(number.strip()) for number in admins.split(',')]
+    if user_id in admins_list:
+        await message.reply("Админов банишь? Ай-ай-ай 😈")
+        return
+    
     
     # Проверяем права бота
     bot_member = await message.bot.get_chat_member(chat_id, message.bot.id)
@@ -43,7 +54,7 @@ async def ban_user(message: Message):
         
 @router.message(Command("unban"))
 async def unban_user(message: Message):
-    
+    chat_id = message.chat.id
     member = await message.bot.get_chat_member(chat_id, message.from_user.id)
     
     if not isinstance(member, ChatMemberAdministrator) or not member.can_restrict_members:
@@ -55,9 +66,17 @@ async def unban_user(message: Message):
         await message.reply("Команда должна быть ответом на сообщение пользователя, которого нужно разбанить.")
         return
 
-    # Получаем ID пользователя, которого нужно разбанить
-    user_id = message.reply_to_message.from_user.id
-    chat_id = message.chat.id
+    if message.reply_to_message.from_user.id == message.from_user.id:
+        await message.reply("Нельзя разбанить самого себя 🤪")
+        return
+    
+    user_id = message.reply_to_message.from_user.id  
+    admins = os.getenv('ADMIN_IDS')
+    admins_list = [int(number.strip()) for number in admins.split(',')]
+    if user_id in admins_list:
+        await message.reply("Админов разбанить можешь, а забанить нет)")
+        return
+    
 
     try:
         # Снимаем бан с пользователя
@@ -69,7 +88,7 @@ async def unban_user(message: Message):
 
 @router.message(Command("kick"))
 async def kick_user(message: Message):
-    
+    chat_id = message.chat.id
     member = await message.bot.get_chat_member(chat_id, message.from_user.id)
     
     if not isinstance(member, ChatMemberAdministrator) or not member.can_restrict_members:
@@ -81,9 +100,17 @@ async def kick_user(message: Message):
         await message.reply("Команда должна быть ответом на сообщение пользователя, которого нужно исключить.")
         return
 
-    # Получаем ID пользователя, которого нужно исключить
-    user_id = message.reply_to_message.from_user.id
-    chat_id = message.chat.id
+    if message.reply_to_message.from_user.id == message.from_user.id:
+        await message.reply("Нельзя кикать самого себя 🤪")
+        return
+    
+    user_id = message.reply_to_message.from_user.id  
+    admins = os.getenv('ADMIN_IDS')
+    admins_list = [int(number.strip()) for number in admins.split(',')]
+    if user_id in admins_list:
+        await message.reply("Админов кикаешь? Ай-ай-ай 😈")
+        return
+    
 
     try:
         # Исключаем пользователя из чата
@@ -96,7 +123,7 @@ async def kick_user(message: Message):
 
 @router.message(Command("warn"))
 async def warn_user(message: Message):
-    
+    chat_id = message.chat.id
     member = await message.bot.get_chat_member(chat_id, message.from_user.id)
     
     if not isinstance(member, ChatMemberAdministrator) or not member.can_restrict_members:
@@ -108,9 +135,16 @@ async def warn_user(message: Message):
         await message.reply("Команда должна быть ответом на сообщение пользователя, которому вы хотите выдать предупреждение.")
         return
 
-    # Получаем ID пользователя и чата
-    user_id = message.reply_to_message.from_user.id
-    chat_id = message.chat.id
+    if message.reply_to_message.from_user.id == message.from_user.id:
+        await message.reply("Нельзя предупреждать самого себя 🤪")
+        return
+    
+    user_id = message.reply_to_message.from_user.id  
+    admins = os.getenv('ADMIN_IDS')
+    admins_list = [int(number.strip()) for number in admins.split(',')]
+    if user_id in admins_list:
+        await message.reply("Ой ой, а это уже не шутки.")
+        return
 
     # Увеличиваем количество предупреждений
     if chat_id not in warnings:
@@ -142,14 +176,29 @@ async def warn_user(message: Message):
         
 @router.message(Command("remwarn"))
 async def remove_warn(message: Message):
+    
+    chat_id = message.chat.id
+    member = await message.bot.get_chat_member(chat_id, message.from_user.id)
+    
+    if not isinstance(member, ChatMemberAdministrator) or not member.can_restrict_members:
+        await message.reply("У вас недостаточно прав!")
+        return
+    
     # Проверяем, является ли команда ответом на сообщение
     if not message.reply_to_message:
         await message.reply("Команда должна быть ответом на сообщение пользователя, у которого нужно снять предупреждение.")
         return
 
-    # Получаем ID пользователя и чата
-    user_id = message.reply_to_message.from_user.id
-    chat_id = message.chat.id
+    if message.reply_to_message.from_user.id == message.from_user.id:
+        await message.reply("Нельзя предупреждать самого себя 🤪")
+        return
+    
+    user_id = message.reply_to_message.from_user.id  
+    admins = os.getenv('ADMIN_IDS')
+    admins_list = [int(number.strip()) for number in admins.split(',')]
+    if user_id in admins_list:
+        await message.reply("Ой ой, а это уже не шутки.")
+        return
 
     # Проверяем, есть ли предупреждения у пользователя
     if chat_id not in warnings or user_id not in warnings[chat_id] or warnings[chat_id][user_id] == 0:
@@ -173,7 +222,94 @@ async def list_warns(message: Message):
         await message.reply("В этом чате нет пользователей с предупреждениями.")
         return
 
-    warn_list = "\n".join(
-        [f"{user_id}: {warn_count} предупреждений" for user_id, warn_count in warnings[chat_id].items()]
+    warn_list = []
+    for user_id, warn_count in warnings[chat_id].items():
+        try:
+            # Получаем информацию о пользователе
+            member = await message.chat.get_member(user_id)
+            user = member.user
+            # Получаем юзернейм или полное имя
+            if user.username:
+                user_name = f"@{user.username}"
+            else:
+                user_name = f"{user.full_name}"
+        except Exception:
+            user_name = "Неизвестный пользователь"
+        # Формируем строку с информацией о предупреждениях
+        warn_list.append(f"{user_name} (ID: {user_id}): {warn_count} предупреждение(ий)")
+
+    warn_list_str = "\n".join(warn_list)
+    await message.reply(f"Список предупреждений:\n{warn_list_str}")
+    
+@router.message(Command("mute"))
+async def mute_user(message: Message):
+    chat_id = message.chat.id
+    member = await message.bot.get_chat_member(chat_id, message.from_user.id)
+    
+    if not isinstance(member, ChatMemberAdministrator) or not member.can_restrict_members:
+        await message.reply("У вас недостаточно прав!")
+        return
+    
+    if not message.reply_to_message:
+        await message.reply("Пожалуйста, используйте эту команду в ответ на сообщение пользователя.")
+        return
+
+    user_id = message.reply_to_message.from_user.id
+    duration = 60  # Время мута в минутах
+
+    until_date = datetime.now() + timedelta(minutes=duration)
+    await message.chat.restrict(
+        user_id=user_id,
+        permissions=ChatPermissions(can_send_messages=False),
+        until_date=until_date
     )
-    await message.reply(f"Список предупреждений:\n{warn_list}")
+    await message.reply(f"Пользователь {message.reply_to_message.from_user.full_name} замучен на {duration} минут.")
+    
+@router.message(Command("unmute"))
+async def unmute_user(message: Message):
+    chat_id = message.chat.id
+    member = await message.bot.get_chat_member(chat_id, message.from_user.id)
+    
+    if not isinstance(member, ChatMemberAdministrator) or not member.can_restrict_members:
+        await message.reply("У вас недостаточно прав!")
+        return
+    
+    if not message.reply_to_message:
+        await message.reply("Пожалуйста, используйте эту команду в ответ на сообщение пользователя.")
+        return
+
+    user_id = message.reply_to_message.from_user.id
+    await message.chat.restrict(
+        user_id=user_id,
+        permissions=ChatPermissions(can_send_messages=True)
+    )
+    await message.reply(f"С пользователя {message.reply_to_message.from_user.full_name} снят мут.")
+    
+@router.message(Command("poll"))
+async def create_poll(message: Message, command: CommandObject):
+    
+    chat_id = message.chat.id
+    member = await message.bot.get_chat_member(chat_id, message.from_user.id)
+    
+    if not isinstance(member, ChatMemberAdministrator) or not member.can_restrict_members:
+        await message.reply("У вас недостаточно прав!")
+        return
+    
+    args = command.args
+    if not args:
+        await message.reply("Пожалуйста, укажите вопрос и варианты ответа через '|'. Пример: /poll Ваш вопрос | Вариант 1 | Вариант 2")
+        return
+
+    parts = args.split('|')
+    if len(parts) < 2:
+        await message.reply("Пожалуйста, укажите хотя бы один вариант ответа.")
+        return
+
+    question = parts[0].strip()
+    options = [option.strip() for option in parts[1:]]
+
+    await message.answer_poll(
+        question=question,
+        options=options,
+        is_anonymous=True
+    )
