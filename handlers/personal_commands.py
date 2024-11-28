@@ -20,5 +20,5 @@ async def welcome_new_member(event: ChatMemberUpdated):
         user = new_member.user
         await event.bot.send_message(
             event.chat.id,
-            f"Добро пожаловать, {user.full_name}! Пожалуйста, ознакомьтесь с правилами чата."
+            f"Добро пожаловать, {user.full_name}! Пожалуйста, ознакомьтесь с правилами чата использовав команду /rules."
         )

@@ -51,19 +51,16 @@ async def check_new_video():
                 last_video_id = video_id
             else:
                 print('Нет новых видео.')
-            await asyncio.sleep(300)  # Проверяем каждые 5 минут
+            await asyncio.sleep(21600)  # Проверяем каждые 5 минут
         except Exception as e:
             print(f'Ошибка при проверке нового видео: {e}')
-            await asyncio.sleep(300)
+            await asyncio.sleep(21600)
 
 @dp.startup()
 async def on_startup():
     asyncio.create_task(check_new_video())
 
 async def main():
-    # Инициализация бота и диспетчера
-    
-    
     dp.include_router(moderation.router)
     dp.include_router(admin_commands.router)
     dp.include_router(user_commands.router)
@@ -71,10 +68,6 @@ async def main():
 
     try:
         print("Bot Start")
-        await bot.set_my_commands([
-        BotCommand(command="ban", description="Заблокировать пользователя"),
-        ])
-
         await dp.start_polling(bot)
     finally:
         await bot.session.close()
