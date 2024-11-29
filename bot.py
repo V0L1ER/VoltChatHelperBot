@@ -75,10 +75,10 @@ async def check_new_video():
                 last_video_id = video_id  # Обновляем ID последнего видео
             else:
                 print('Нет новых видео.')
-            await asyncio.sleep(21600)  # Пауза между проверками (6 часов)
+            await asyncio.sleep(7200)  # Пауза между проверками (2 часа)
         except Exception as e:
             print(f'Ошибка при проверке нового видео: {e}')
-            await asyncio.sleep(21600)  # Пауза перед следующей попыткой при ошибке
+            await asyncio.sleep(300)  # Пауза перед следующей попыткой при ошибке
 
 @dp.startup()
 async def on_startup():
