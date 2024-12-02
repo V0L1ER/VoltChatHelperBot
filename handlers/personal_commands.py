@@ -39,7 +39,9 @@ async def welcome_new_member(event: ChatMemberUpdated):
     if new_member.status == "member":  # Проверяем, что участник только что вступил в чат
         user = new_member.user  # Получаем информацию о пользователе
         chat_id = event.chat.id
-        if chat_id == os.getenv('CHAT_ID'):
+        TELEGRAM_CHAT_ID = os.getenv('CHAT_ID')
+        TELEGRAM_CHAT_ID = int(TELEGRAM_CHAT_ID)
+        if chat_id == TELEGRAM_CHAT_ID:
             await event.bot.send_message(
                 chat_id,  # ID чата, куда отправить сообщение
                 f"Добро пожаловать, {user.full_name}! Пожалуйста, ознакомьтесь с правилами чата, использовав команду /rules."
