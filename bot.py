@@ -71,14 +71,12 @@ async def check_new_video():
                 # Формируем URL видео и текст сообщения
                 video_url = f'https://www.youtube.com/watch?v={video_id}'
                 message = f'Новое видео на канале!\n\n{title}\n{video_url}'
-                await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)  # Отправляем сообщение в Telegram
+                # await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)  # Отправляем сообщение в Telegram
                 last_video_id = video_id  # Обновляем ID последнего видео
-            else:
-                print('Нет новых видео.')
-            await asyncio.sleep(21600)  # Пауза между проверками (6 часов)
+            await asyncio.sleep(3600)  # Пауза между проверками (1 час)
         except Exception as e:
             print(f'Ошибка при проверке нового видео: {e}')
-            await asyncio.sleep(21600)  # Пауза перед следующей попыткой при ошибке
+            await asyncio.sleep(300)  # Пауза перед следующей попыткой при ошибке
 
 @dp.startup()
 async def on_startup():

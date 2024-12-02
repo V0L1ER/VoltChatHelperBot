@@ -34,10 +34,14 @@ async def welcome_new_member(event: ChatMemberUpdated):
     Args:
         event (ChatMemberUpdated): Событие изменения статуса участника чата.
     """
+
     new_member = event.new_chat_member  # Информация о новом участнике
     if new_member.status == "member":  # Проверяем, что участник только что вступил в чат
         user = new_member.user  # Получаем информацию о пользователе
-        await event.bot.send_message(
-            event.chat.id,  # ID чата, куда отправить сообщение
-            f"Добро пожаловать, {user.full_name}! Пожалуйста, ознакомьтесь с правилами чата, использовав команду /rules."
-        )
+        chat_id = event.chat.id
+        if chat_id == os.getenv('CHAT_ID'):
+            await event.bot.send_message(
+                chat_id,  # ID чата, куда отправить сообщение
+                f"Добро пожаловать, {user.full_name}! Пожалуйста, ознакомьтесь с правилами чата, использовав команду /rules."
+            )
+        
