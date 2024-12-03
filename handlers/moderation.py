@@ -27,7 +27,7 @@ async def handle_forbidden_words(message: Message):
     await message.answer(f"Сообщение с запрещёнными словами было удалено.")  # Уведомляем об удалении
     
     
-router.message()
+@router.message()
 async def anti_spam_handler(message: Message):
     user_id = message.from_user.id
     current_time = time.time()
