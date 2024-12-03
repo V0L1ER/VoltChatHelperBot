@@ -29,8 +29,8 @@ async def handle_forbidden_words(message: Message):
 @router.message()
 async def anti_spam_handler(message: Message):
     # Игнорировать команды
-    if message.entities and message.entities[0].type == 'bot_command':
-        return  # Позволяет другим обработчикам обрабатывать команды
+    if message.text and message.text.startswith('/'):
+        return  # Это команда, не обрабатываем анти-спамом
 
     user_id = message.from_user.id
     current_time = time.time()
