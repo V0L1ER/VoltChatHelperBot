@@ -78,7 +78,7 @@ async def check_new_video():
         except Exception as e:
             print(f'Ошибка при проверке нового видео: {e}')
             await asyncio.sleep(300)  # Пауза перед следующей попыткой при ошибке
-
+ 
 @dp.startup()
 async def on_startup():
     """
