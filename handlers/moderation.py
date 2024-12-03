@@ -51,7 +51,7 @@ async def anti_spam_handler(message: Message):
                 ),
                 until_date=time.time() + 300  # Мут на 5 минут
             )
-            await message.reply(f"{message.from_user.first_name} был временно замучен за спам.")
+            await message.reply(f"{message.from_user.first_name} был(а) временно замучен(а) за спам.")
             
             # Очистка списка сообщений после применения санкций
             user_messages[user_id] = []
