@@ -12,8 +12,8 @@ class AntiSpamMiddleware(BaseMiddleware):
 
     async def on_pre_process_message(self, message: types.Message, data: dict):
         # Игнорировать команды
-        if message.is_command():
-            return
+        if message.entities and message.entities[0].type == 'bot_command':
+            return  # Это команда, не обрабатываем анти-спамом
         
         user_id = message.from_user.id
         current_time = time.time()
