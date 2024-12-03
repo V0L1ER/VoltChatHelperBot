@@ -38,23 +38,20 @@ async def anti_spam_handler(message: Message):
     
     if len(user_messages[user_id]) > MESSAGE_LIMIT:
         # Проверяем, есть ли уже активные санкции
-        try:
-            member = await message.chat.get_member(user_id)
-            if member.is_member:
-                # Отправляем предупреждение
-                await message.reply(f"{message.from_user.first_name}, пожалуйста, не спамьте. У вас {len(user_messages[user_id])} сообщений за {TIME_WINDOW} секунд.")
-                
-                # Применяем временный мут
-                await message.chat.restrict(
-                    user_id,
-                    permissions=ChatPermissions(
-                        send_messages=False
-                    ),
-                    until_date=time.time() + 300  # Мут на 5 минут
-                )
-                await message.reply(f"{message.from_user.first_name} был временно замучен за спам.")
-                
-                # Очистка списка сообщений после применения санкций
-                user_messages[user_id] = []
-        except Exception as e:
-            await message.answer(f"Ошибка при применении санкций к пользователю {user_id} {e}")
+        member = await message.chat.get_member(user_id)
+        if member.status in ['member', 'restricted']:
+            # Отправляем предупреждение
+            await message.reply(f"{message.from_user.first_name}, пожалуйста, не спамьте. У вас {len(user_messages[user_id])} сообщений за {TIME_WINDOW} секунд.")
+            
+            # Применяем временный мут
+            await message.chat.restrict(
+                user_id,
+                permissions=ChatPermissions(
+                    send_messages=False
+                ),
+                until_date=time.time() + 300  # Мут на 5 минут
+            )
+            await message.reply(f"{message.from_user.first_name} был временно замучен за спам.")
+            
+            # Очистка списка сообщений после применения санкций
+            user_messages[user_id] = []
