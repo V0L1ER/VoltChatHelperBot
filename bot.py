@@ -18,6 +18,7 @@ dp = Dispatcher(storage=MemoryStorage())  # Используем память д
 
 # Константы
 TELEGRAM_CHAT_ID = os.getenv('CHANNEL_ID')  # ID чата/канала для отправки уведомлений
+TELEGRAM_CHAT_ID = int(TELEGRAM_CHAT_ID)
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')  # API-ключ для YouTube Data API
 YOUTUBE_CHANNEL_ID = os.getenv('YOUTUBE_CHANNEL_ID')  # ID YouTube-канала для отслеживания
 
@@ -71,7 +72,7 @@ async def check_new_video():
                 # Формируем URL видео и текст сообщения
                 video_url = f'https://www.youtube.com/watch?v={video_id}'
                 message = f'Новое видео на канале!\n\n{title}\n{video_url}'
-                # await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)  # Отправляем сообщение в Telegram
+                #  await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)  # Отправляем сообщение в Telegram
                 last_video_id = video_id  # Обновляем ID последнего видео
             await asyncio.sleep(3600)  # Пауза между проверками (1 час)
         except Exception as e:
