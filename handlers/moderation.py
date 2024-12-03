@@ -56,5 +56,5 @@ async def anti_spam_handler(message: Message):
                 
                 # Очистка списка сообщений после применения санкций
                 user_messages[user_id] = []
-        except Exception:
-            await message.answer(f"Ошибка при применении санкций к пользователю {user_id}")
+        except Exception as e:
+            await message.answer(f"Ошибка при применении санкций к пользователю {user_id} {e}")
