@@ -102,7 +102,7 @@ async def main():
     dp.include_router(personal_commands.router)  # Личные команды
 
     try:
-        print("Bot Start 13")  # Сообщение о запуске бота
+        print("Bot Start")  # Сообщение о запуске бота
         await dp.start_polling(bot)  # Запускаем polling
     finally:
         await bot.session.close()  # Закрываем сессию бота при завершении работы
