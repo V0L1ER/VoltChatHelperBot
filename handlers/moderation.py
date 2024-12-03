@@ -29,6 +29,10 @@ async def handle_forbidden_words(message: Message):
     
 @router.message()
 async def anti_spam_handler(message: Message):
+    
+    if message.is_command():
+        return  # Позволяет другим обработчикам обрабатывать команды
+    
     user_id = message.from_user.id
     current_time = time.time()
     
