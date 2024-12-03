@@ -1,5 +1,5 @@
 from aiogram import Router
-from aiogram.types import Message
+from aiogram.types import Message, ChatPermissions
 from filters import ContainsForbiddenWord
 from collections import defaultdict
 import time
@@ -7,8 +7,8 @@ import time
 # Создаём объект маршрутизатора
 router = Router()
 
-user_message_times = defaultdict(list)
-SPAM_LIMIT = 5  # Сообщений
+user_messages = defaultdict(list)
+MESSAGE_LIMIT = 5  # Сообщений
 TIME_WINDOW = 60  # Секунд
 
 @router.message(ContainsForbiddenWord())
@@ -31,20 +31,30 @@ router.message()
 async def anti_spam_handler(message: Message):
     user_id = message.from_user.id
     current_time = time.time()
-
-    # Очистка старых временных меток
-    user_message_times[user_id] = [
-        timestamp for timestamp in user_message_times[user_id]
-        if current_time - timestamp < TIME_WINDOW
-    ]
-
-    # Добавление текущего сообщения
-    user_message_times[user_id].append(current_time)
-
-    # Проверка лимита
-    if len(user_message_times[user_id]) > SPAM_LIMIT:
+    
+    # Обновление списка временных меток сообщений пользователя
+    user_messages[user_id] = [timestamp for timestamp in user_messages[user_id] if current_time - timestamp < TIME_WINDOW]
+    user_messages[user_id].append(current_time)
+    
+    if len(user_messages[user_id]) > MESSAGE_LIMIT:
+        # Проверяем, есть ли уже активные санкции
         try:
-            await message.delete()
-            await message.reply(f"{message.from_user.first_name}, пожалуйста, не спамьте!")
-        except Exception as e:
-            print(f"Ошибка при удалении сообщения или отправке предупреждения: {e}")
+            member = await message.chat.get_member(user_id)
+            if member.is_member:
+                # Отправляем предупреждение
+                await message.reply(f"{message.from_user.first_name}, пожалуйста, не спамьте. У вас {len(user_messages[user_id])} сообщений за {TIME_WINDOW} секунд.")
+                
+                # Применяем временный мут
+                await message.chat.restrict(
+                    user_id,
+                    permissions=ChatPermissions(
+                        send_messages=False
+                    ),
+                    until_date=time.time() + 300  # Мут на 5 минут
+                )
+                await message.reply(f"{message.from_user.first_name} был временно замучен за спам.")
+                
+                # Очистка списка сообщений после применения санкций
+                user_messages[user_id] = []
+        except Exception:
+            await message.answer(f"Ошибка при применении санкций к пользователю {user_id}")

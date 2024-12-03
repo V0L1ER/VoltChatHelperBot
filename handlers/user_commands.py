@@ -46,7 +46,9 @@ async def report_user(message: Message, bot: Bot):
         await message.reply("Админов репортишь? Ай-ай-ай 😈")
         return
 
-    if message.reply_to_message.from_user.id == os.getenv('CHANNEL_ID'):
+    TELEGRAM_CHANNEL_ID = os.getenv('CHANNEL_ID')
+    TELEGRAM_CHANNEL_ID = int(TELEGRAM_CHANNEL_ID)
+    if message.reply_to_message.from_user.id == TELEGRAM_CHANNEL_ID:
         await message.delete()
         return
 
