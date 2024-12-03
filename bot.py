@@ -8,7 +8,6 @@ from handlers import admin_commands, moderation, personal_commands, user_command
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from googleapiclient.discovery import build
-from middleware import AntiSpamMiddleware
 
 # Загружаем переменные окружения из файла .env
 load_dotenv()
@@ -29,7 +28,6 @@ youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
 # Переменная для хранения ID последнего видео
 last_video_id = None
 
-anti_spam = AntiSpamMiddleware(time_window=60, message_limit=10)
 
 def get_latest_video_info():
     """
@@ -103,7 +101,6 @@ async def main():
     dp.include_router(admin_commands.router)  # Административные команды
     dp.include_router(user_commands.router)  # Команды для пользователей
     dp.include_router(personal_commands.router)  # Личные команды
-    dp.message.middleware(anti_spam)
 
     try:
         print("Bot Start")  # Сообщение о запуске бота
