@@ -1,65 +1,96 @@
 from aiogram import Router
-from aiogram.types import Message, ChatPermissions
-from filters import ContainsForbiddenWord
-from collections import defaultdict
-import time
+from aiogram.types import Message
+from filters.bad_word_filters import ContainsForbiddenWord
+from sqlalchemy.future import select
+from sqlalchemy.exc import NoResultFound
+from database.database import AsyncSessionLocal
+from database.models import Warning
+from datetime import datetime, timezone
+from utils.logger import BotLogger
+from middlewares.spam_filter import SpamFilter
+import asyncio
+from config import get_settings
 
-# Создаём объект маршрутизатора
 router = Router()
 
-user_messages = defaultdict(list)
-MESSAGE_LIMIT = 5  # Сообщений
-TIME_WINDOW = 60  # Секунд
+logger = BotLogger.get_logger()
+settings = get_settings()
+
+WARN_LIMIT = 3  # Лимит предупреждений
+
+# Добавляем в начало файла
+spam_filter = SpamFilter()
 
 @router.message(ContainsForbiddenWord())
 async def handle_forbidden_words(message: Message):
-    """
-    Обработчик сообщений с запрещёнными словами.
+    logger.info(f"Deleted message with forbidden words from user {message.from_user.id} in chat {message.chat.id}")
+    await message.delete()
+    chat_id = message.chat.id
+    user_id = message.from_user.id
 
-    Если сообщение содержит запрещённые слова:
-    - Удаляет сообщение.
-    - Отправляет уведомление о том, что сообщение было удалено.
+    async with AsyncSessionLocal() as session:
+        stmt = select(Warning).where(Warning.chat_id == chat_id, Warning.user_id == user_id)
+        result = await session.execute(stmt)
+        warning = result.scalars().first()
 
-    Args:
-        message (Message): Сообщение, содержащее запрещённые слова.
-    """
-    await message.delete()  # Удаляем сообщение с запрещённым словом
-    await message.answer(f"Сообщение с запрещёнными словами было удалено.")  # Уведомляем об удалении
+        if warning:
+            current_warnings = warning.warning_count
+            warning.warning_count += 1
+            warning.last_warning = datetime.now(timezone.utc)
+        else:
+            warning = Warning(
+                chat_id=chat_id,
+                user_id=user_id,
+                warning_count=1,
+                last_warning=datetime.now(timezone.utc)
+            )
+            session.add(warning)
+            current_warnings = 1
 
-# @router.message()
-# async def anti_spam_handler(message: Message):
-#     # Игнорировать команды
-#     if message.text and message.text.startswith('/'):
-#         return  # Это команда, не обрабатываем анти-спамом
+        await session.commit()
 
-#     user_id = message.from_user.id
-#     current_time = time.time()
-    
-#     # Обновление списка временных меток сообщений пользователя
-#     user_messages[user_id] = [
-#         timestamp for timestamp in user_messages[user_id]
-#         if current_time - timestamp < TIME_WINDOW
-#     ]
-#     user_messages[user_id].append(current_time)
-    
-#     if len(user_messages[user_id]) > MESSAGE_LIMIT:
-#         # Проверяем, есть ли уже активные санкции
-#         member = await message.chat.get_member(user_id)
-#         if member.status in ['member', 'restricted']:
-#             # Отправляем предупреждение
-#             await message.reply(
-#                 f"{message.from_user.first_name}, пожалуйста, не спамьте. У вас {len(user_messages[user_id])} сообщений за {TIME_WINDOW} секунд."
-#             )
-            
-#             # Применяем временный мут
-#             await message.chat.restrict(
-#                 user_id,
-#                 permissions=ChatPermissions(
-#                     send_messages=False
-#                 ),
-#                 until_date=int(time.time()) + 300  # Мут на 5 минут
-#             )
-#             await message.reply(f"{message.from_user.first_name} был(а) временно замучен(а) за спам.")
-            
-#             # Очистка списка сообщений после применения санкций
-#             user_messages[user_id] = []
+        if warning.warning_count >= WARN_LIMIT:
+            try:
+                await message.chat.ban(user_id)
+                await message.answer(f"Пользователь {message.from_user.full_name} был исключен из чата за превышение лимита предупреждений ({WARN_LIMIT}).")
+                await message.chat.unban(user_id)
+                # Сброс предупреждений после исключения
+                await session.delete(warning)
+                await session.commit()
+            except Exception as e:
+                await message.answer(f"Не удалось исключить пользователя: {e}")
+        else:
+            await message.answer(f"Сообщение с запрещёнными словами было удалено. Предупреждение {warning.warning_count}/{WARN_LIMIT}.")  
+
+# @router.message(spam_filter)
+async def handle_spam(message: Message, spam_type: str, time_window: float = None):
+    try:
+        # Удаляем сообщение
+        await message.delete()
+        
+        # Формируем текст предупреждения
+        warning_text = {
+            "frequency": f"⚠️ Слишком много сообщений за {time_window:.1f} секунд!",
+            "repeat": "⚠️ Прекратите отправлять одинаковые сообщения!",
+            "flood": "⚠️ Прекратите флудить короткими сообщениями!",
+            "caps": "⚠️ Не пишите КАПСОМ!",
+            "urls": "⚠️ Слишком много ссылок в сообщении!"
+        }.get(spam_type, "⚠️ Обнаружен спам!")
+
+        # Отправляем предупреждение
+        warn_msg = await message.answer(
+            f"{warning_text}\n"
+            f"👤 Пользователь: {message.from_user.mention_html()}"
+        )
+        
+        # Удаляем предупреждение через некоторое время
+        await asyncio.sleep(settings.MESSAGE_DELETION_DELAY)
+        await warn_msg.delete()
+        
+        logger.info(
+            f"Spam detected from user {message.from_user.id}, "
+            f"type: {spam_type}, chat: {message.chat.id}"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error handling spam message: {e}", exc_info=True)  
